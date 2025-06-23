@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   backend:
-    image: tejas2506/backend:t1
+    image: shamraokumbhar/backend:sha1
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/quantumsoft
       SPRING_DATASOURCE_USERNAME: root
@@ -15,7 +15,7 @@ services:
       - mynetwork
 
   frontend:
-    image: tejas2506/frontend:t1
+    image: shamraokumbhar/frontend:sha1
     ports:
       - "5502:80"
     depends_on:
