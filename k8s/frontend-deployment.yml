@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: shamraokumbhar/frontend:latest
+          image: shamraokumbhar/frontend:v1.0.10
           imagePullPolicy: Always
           ports:
             - containerPort: 80
