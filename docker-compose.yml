@@ -1,5 +1,5 @@
 version: '3.4'
-
+ 
 services:
   backend:
     image: shamraokumbhar/backend:latest
@@ -8,12 +8,12 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
     ports:
-      - "8000:8000"
+      - "8080:8080"
     depends_on:
       - mysql-service
     networks:
       - mynetwork
-
+ 
   frontend:
     image: shamraokumbhar/frontend:latest
     ports:
@@ -22,8 +22,8 @@ services:
       - mysql-service
     networks:
       - mynetwork
-
-
+ 
+ 
   mysql-service:
     image: mysql:8.0
     environment:
@@ -36,9 +36,9 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - mynetwork
-
+ 
 networks:
   mynetwork:
-
+ 
 volumes:
   mysql-data:
