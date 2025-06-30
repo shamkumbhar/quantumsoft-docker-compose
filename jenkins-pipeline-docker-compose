@@ -1,72 +1,90 @@
 pipeline {
-    agent {label 'agent'}
-    environment {
-        FRONTEND_IMAGE = 'tejas2506/frontend:t1'
-        BACKEND_IMAGE  = 'tejas2506/backend:t1'
-        DOCKERHUB_CREDENTIALS = 'docker'
+    agent { label 'sham' }
+	
+	
+	environment {
+        IMAGE_TAG = "v1.0.${BUILD_NUMBER}"
+        IMAGE_NAME_FE = "shamraokumbhar/frontend"
+        IMAGE_NAME_BE = "shamraokumbhar/backend"
+        K8S_YAML_PATH = "k8s/deployment.yml"
     }
- 
+	
+	
+
     stages {
-        stage('git clone') {
+        stage('Clone Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/tejas-b25/quantumsoft-docker-compose.git'
+                git branch: 'main', url: 'https://github.com/shamkumbhar/quantumsoft-docker-compose.git'
             }
         }
-        stage('Install Docker Compose') {
-            steps {
-                sh '''
-                    sudo apt update
-                    sudo apt install -y docker.io curl
-                    sudo systemctl enable docker
-                    sudo systemctl start docker
-                    sudo newgrp docker
- 
-                    mkdir -p ~/.docker/cli-plugins
-                    curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-                      -o ~/.docker/cli-plugins/docker-compose
-                    chmod +x ~/.docker/cli-plugins/docker-compose
- 
-                    docker --version
-                    docker compose version || true
-                '''
-            }
-        }
+        
         stage('Docker Login') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    echo "$DOCKER_PASS" | sudo docker login -u "$DOCKER_USER" --password-stdin
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                 }
             }
         }
-        stage('Build & Push Backend Image') {
-            steps {
-                    sh '''
-                    docker build -t $BACKEND_IMAGE .
-                    docker push $BACKEND_IMAGE
-                    '''
-            }
-        }
-        stage('Build & Push Frontend Image') {
+        
+        
+        
+        stage('Build Frontend Docker Image') {
             steps {
                 dir('qfrontend') {
-                    sh '''
-                    docker build -t $FRONTEND_IMAGE .
-                    docker push $FRONTEND_IMAGE
-                    '''
+                    sh 'docker build -t shamraokumbhar/frontend:${IMAGE_TAG} .'
                 }
             }
         }
-        stage('Deployment') {
+    
+        
+        stage('Build Backend Docker Image') {
             steps {
-            withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                echo 'Building Docker image...'
+                sh 'docker build -t shamraokumbhar/backend:${IMAGE_TAG} .'
+                echo 'Docker image built successfully.'
+            }
+        }
+        
+       stage('Push to Docker Hub') {
+        steps {
+         withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) 
+		   {
             sh '''
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-            docker compose up -d
+                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                docker push shamraokumbhar/frontend:${IMAGE_TAG}
+                docker push shamraokumbhar/backend:${IMAGE_TAG}
             '''
-             }
-          }
+           }
+         }
        }
+
+        
+        stage('Update YAML Tag') {
+            steps {
+                script {
+                    def file = readFile("$K8S_YAML_PATH")
+                    file = file.replaceAll(/image: .*\/frontend:.*/, "image: $IMAGE_NAME_FE:$IMAGE_TAG")
+                    file = file.replaceAll(/image: .*\/backend:.*/, "image: $IMAGE_NAME_BE:$IMAGE_TAG")
+                    writeFile file: "$K8S_YAML_PATH", text: file
+                }
+            }
+        }
+
+       stage('Commit Updated YAML') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'github-push-token', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+            sh """
+                git config user.name "jenkins-bot"
+                git config user.email "jenkins@example.com"
+                git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/shamkumbhar/quantumsoft-docker-compose.git
+                git add k8s/deployment.yml
+                git commit -m "CI: Update frontend image to ${IMAGE_TAG}"
+                git push origin main
+            """
+        }
     }
+}
+
+		
+  }
 }
