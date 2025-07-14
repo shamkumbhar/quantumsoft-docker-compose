@@ -2,7 +2,7 @@ version: '3.4'
  
 services:
   springboot-service:
-    image: shamraokumbhar/backend:latest
+    image: shamkumbhar47/backend:qsoft
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-service:3306/quantumsoft
       SPRING_DATASOURCE_USERNAME: root
@@ -15,7 +15,7 @@ services:
       - mynetwork
  
   frontend:
-    image: shamraokumbhar/frontend:latest
+    image: shamkumbhar47/frontend:qsoft
     ports:
       - "5502:80"
     depends_on:
