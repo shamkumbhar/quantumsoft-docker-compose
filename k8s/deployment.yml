@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: shamraokumbhar/frontend:latest
+          image: shamraokumbhar/frontend:qsoft
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -63,7 +63,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: shamraokumbhar/backend:latest
+          image: shamraokumbhar/backend:qsoft
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
